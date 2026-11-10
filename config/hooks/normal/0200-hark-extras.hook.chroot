@@ -35,7 +35,8 @@ apt-get update >>"$LOG" 2>&1
 try_pkg arduino kicad-symbols kicad-footprints kicad-templates
 # 3D printing, schematics, Pi
 try_pkg prusa-slicer fritzing qelectrotech rpi-imager meshlab
-# Microcontrollers
+# Microcontrollers (esptool: Debian package if available, otherwise pipx below)
+try_pkg esptool
 try_pkg micropython picotool arduino-mk
 # Qt helpers for LXQt (differ between Debian releases)
 try_pkg obconf-qt lxqt-archiver qpdfview qps
@@ -83,7 +84,9 @@ fi
 # --- PlatformIO, mpremote and ampy system-wide via pipx ---
 export PIPX_HOME=/opt/pipx
 export PIPX_BIN_DIR=/usr/local/bin
-for tool in platformio mpremote adafruit-ampy; do
+TOOLS="platformio mpremote adafruit-ampy"
+command -v esptool >/dev/null || command -v esptool.py >/dev/null || TOOLS="$TOOLS esptool"
+for tool in $TOOLS; do
   if pipx install "$tool" >>"$LOG" 2>&1; then
     echo "OK      $tool (pipx)" | tee -a "$LOG"
   else

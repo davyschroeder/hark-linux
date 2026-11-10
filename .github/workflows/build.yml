@@ -29,6 +29,7 @@ jobs:
 
       - name: Build ISO (live-build in a Debian container)
         run: |
+          set -o pipefail
           chmod +x build.sh auto/* config/hooks/normal/* config/includes.chroot/usr/local/bin/*
           ./build.sh ${{ matrix.arch }} docker 2>&1 | tee ci-build.log
 

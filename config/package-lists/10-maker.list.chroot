@@ -3,7 +3,6 @@ avrdude
 gcc-avr
 avr-libc
 binutils-avr
-esptool
 gcc-arm-none-eabi
 libnewlib-arm-none-eabi
 openocd
