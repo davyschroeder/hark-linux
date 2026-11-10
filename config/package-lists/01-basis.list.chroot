@@ -2,6 +2,7 @@
 live-boot
 live-config
 live-config-systemd
+user-setup
 sudo
 locales
 console-setup

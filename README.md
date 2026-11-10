@@ -110,7 +110,7 @@ The source file in this repo was cut from a phone screenshot of the wiki. Replac
 | Bookmarks and add-ons | `config/includes.chroot/etc/firefox-esr/policies/policies.json` |
 | Boot options (language, keyboard, user) | `auto/config` |
 
-The live user is `nurd` with no password.
+The live user is `nurd` with no password; the live session logs in to LXQt automatically. The installed system uses the account you create in the installer.
 
 ## Licence
 

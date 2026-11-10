@@ -1,0 +1,23 @@
+#!/bin/sh
+# Hark Linux — live session only (live-config runs only when booted with boot=live):
+# the live user gets an empty password and LightDM logs in automatically.
+# Runs after 0030-user-setup, which creates the user (needs the user-setup package).
+
+LIVE_USER="${LIVE_USERNAME:-}"
+[ -n "$LIVE_USER" ] || LIVE_USER="$(awk -F: '$3==1000 {print $1; exit}' /etc/passwd)"
+[ -n "$LIVE_USER" ] || exit 0
+id "$LIVE_USER" >/dev/null 2>&1 || exit 0
+
+echo -n " hark-live-user"
+
+# Empty password (no prompt at the console or the lock screen)
+passwd -d "$LIVE_USER" >/dev/null 2>&1 || true
+
+# Log straight into LXQt
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/70-hark-live-autologin.conf <<EOT
+[Seat:*]
+autologin-user=$LIVE_USER
+autologin-user-timeout=0
+autologin-session=lxqt
+EOT
