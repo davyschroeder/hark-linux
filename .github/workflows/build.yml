@@ -30,7 +30,7 @@ jobs:
       - name: Build ISO (live-build in a Debian container)
         run: |
           chmod +x build.sh auto/* config/hooks/normal/* config/includes.chroot/usr/local/bin/*
-          ./build.sh ${{ matrix.arch }} docker
+          ./build.sh ${{ matrix.arch }} docker 2>&1 | tee ci-build.log
 
       - name: Show extras log
         if: always()
@@ -39,6 +39,17 @@ jobs:
       - name: Show end of build log
         if: failure()
         run: sudo tail -n 200 build.log || true
+
+      - name: Publish logs to branch ci-logs-${{ matrix.arch }}
+        if: always()
+        run: |
+          mkdir -p /tmp/logs
+          tail -n 4000 ci-build.log > /tmp/logs/build.log 2>/dev/null || true
+          sudo cat chroot/var/log/hark-extras.log > /tmp/logs/extras.log 2>/dev/null || true
+          echo "run ${{ github.run_id }} sha ${{ github.sha }} job ${{ job.status }}" > /tmp/logs/STATUS
+          cd /tmp/logs && git init -q -b logs && git add -A
+          git -c user.name=hark-ci -c user.email=ci@invalid commit -qm "logs ${{ matrix.arch }} run ${{ github.run_id }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" HEAD:refs/heads/ci-logs-${{ matrix.arch }}
 
       - name: Collect ISO
         run: |
