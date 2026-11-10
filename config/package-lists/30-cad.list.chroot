@@ -1,0 +1,10 @@
+# --- CAD, PCB & 3D ---
+# FreeCAD and KiCad are heavy; on i386 the extras hook tries them separately
+#if ARCHITECTURES amd64
+freecad
+kicad
+#endif
+librecad
+openscad
+solvespace
+dia

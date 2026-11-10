@@ -1,0 +1,59 @@
+#!/bin/sh
+# Hark Linux — tuning for old hardware (little RAM, slow disk/CPU)
+set -e
+
+# Compressed swap in RAM: feels like ~1.5x the memory
+cat > /etc/default/zramswap <<'EOF'
+ALGO=zstd
+PERCENT=60
+PRIORITY=100
+EOF
+systemctl enable zramswap.service 2>/dev/null || true
+
+# earlyoom: stops a full RAM from freezing the whole system
+cat > /etc/default/earlyoom <<'EOF'
+EARLYOOM_ARGS="-m 5 -s 10 -r 3600 --avoid '(^|/)(Xorg|lightdm|lxqt-session|lxqt-panel|openbox|systemd)$' --prefer '(^|/)(firefox-esr|blender|freecad|kicad)$'"
+EOF
+systemctl enable earlyoom.service 2>/dev/null || true
+
+# Services a workbench PC rarely needs: off (can be re-enabled)
+for svc in ModemManager.service cups-browsed.service man-db.timer; do
+  systemctl disable "$svc" 2>/dev/null || true
+done
+# SSH server is installed but off by default (safe on an open hackerspace network)
+systemctl disable ssh.service 2>/dev/null || true
+
+# LTS: automatic security updates on installed machines, but not in a live session
+for unit in apt-daily.service apt-daily-upgrade.service; do
+  mkdir -p "/etc/systemd/system/$unit.d"
+  printf '[Unit]\nConditionPathIsDirectory=!/run/live/medium\n' > "/etc/systemd/system/$unit.d/hark-not-live.conf"
+done
+cat > /etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+APT::Periodic::AutocleanInterval "7";
+EOF
+
+# Keep the journal small
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/hark.conf <<'EOF'
+[Journal]
+SystemMaxUse=50M
+EOF
+
+# Faster shutdown
+mkdir -p /etc/systemd/system.conf.d
+cat > /etc/systemd/system.conf.d/hark.conf <<'EOF'
+[Manager]
+DefaultTimeoutStopSec=10s
+EOF
+
+# Firefox ESR: less memory per tab, no telemetry
+mkdir -p /etc/firefox-esr
+cat > /etc/firefox-esr/hark.js <<'EOF'
+pref("dom.ipc.processCount", 2);
+pref("browser.sessionstore.interval", 60000);
+pref("toolkit.telemetry.enabled", false);
+pref("datareporting.healthreport.uploadEnabled", false);
+pref("intl.locale.requested", "");
+EOF

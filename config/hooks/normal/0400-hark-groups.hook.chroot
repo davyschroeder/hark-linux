@@ -1,0 +1,11 @@
+#!/bin/sh
+# Groups for hardware access without sudo (serial ports, I2C, GPIO, Wireshark)
+set -e
+for g in dialout plugdev i2c gpio spi wireshark; do
+  getent group "$g" >/dev/null || groupadd -r "$g"
+done
+# Users created later by the installer get these groups too
+if [ -f /etc/adduser.conf ]; then
+  sed -i 's/^#\?EXTRA_GROUPS=.*/EXTRA_GROUPS="audio video plugdev netdev dialout bluetooth i2c gpio spi wireshark"/' /etc/adduser.conf
+  sed -i 's/^#\?ADD_EXTRA_GROUPS=.*/ADD_EXTRA_GROUPS=1/' /etc/adduser.conf
+fi

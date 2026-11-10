@@ -1,0 +1,110 @@
+#!/bin/sh
+# Hark Linux — extra software
+#  1. Packages that do not exist in every Debian release: try them one by one,
+#     so a missing package does not break the build.
+#  2. Tools that are not in Debian: arduino-cli, PlatformIO, Sense HAT.
+set -u
+
+LOG=/var/log/hark-extras.log
+: > "$LOG"
+export DEBIAN_FRONTEND=noninteractive
+
+try_pkg() {
+  for p in "$@"; do
+    if apt-get install -y --no-install-recommends "$p" >>"$LOG" 2>&1; then
+      echo "OK      $p" | tee -a "$LOG"
+    else
+      echo "FAILED  $p (skipped)" | tee -a "$LOG"
+    fi
+  done
+}
+
+# First package that installs from a list of alternatives (avoids conflicts)
+try_one() {
+  for p in "$@"; do
+    if apt-get install -y --no-install-recommends "$p" >>"$LOG" 2>&1; then
+      echo "OK      $p" | tee -a "$LOG"; return 0
+    fi
+  done
+  echo "FAILED  $* (none available)" | tee -a "$LOG"
+}
+
+apt-get update >>"$LOG" 2>&1
+
+# Arduino IDE 1.8 (light, also on 32-bit) and KiCad libraries
+try_pkg arduino kicad-symbols kicad-footprints kicad-templates
+# 3D printing, schematics, Pi
+try_pkg prusa-slicer fritzing qelectrotech rpi-imager meshlab
+# Microcontrollers
+try_pkg micropython picotool arduino-mk
+# Qt helpers for LXQt (differ between Debian releases)
+try_pkg obconf-qt lxqt-archiver qpdfview qps
+# System info and looks
+try_one fastfetch neofetch
+try_pkg arc-theme
+# Firefox language packs (Firefox follows the system language)
+try_pkg firefox-esr-l10n-nl firefox-esr-l10n-de firefox-esr-l10n-en-gb
+# Office, light
+try_pkg abiword gnumeric
+# Wiki: benchmarks and monitor calibration (package names differ per Debian release)
+try_one hardinfo2 hardinfo
+try_one glmark2-x11 glmark2
+try_pkg displaycal
+# Wiki: eyecandy
+try_pkg hollywood
+# Wiki: emulation (WINE, DOSBox, VICE). PICO-8 is commercial: install via hark-tools
+try_pkg wine vice
+try_one dosbox-staging dosbox
+# Heavier stuff on 64-bit only
+if [ "$(dpkg --print-architecture)" = "amd64" ]; then
+  try_pkg blender scribus radare2
+else
+  # 32-bit: try the heavy CAD/drawing apps, but they are optional
+  try_pkg freecad kicad krita
+fi
+
+# --- arduino-cli (official binary) ---
+if curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh \
+     | BINDIR=/usr/local/bin sh >>"$LOG" 2>&1; then
+  echo "OK      arduino-cli" | tee -a "$LOG"
+  # Pre-configure ESP32/ESP8266/RP2040 board URLs for every new user
+  mkdir -p /etc/skel/.arduino15
+  cat > /etc/skel/.arduino15/arduino-cli.yaml <<'EOF'
+board_manager:
+  additional_urls:
+    - https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    - https://arduino.esp8266.com/stable/package_esp8266com_index.json
+    - https://github.com/earlephilhower/arduino-pico/releases/download/global/package_rp2040_index.json
+EOF
+else
+  echo "FAILED  arduino-cli" | tee -a "$LOG"
+fi
+
+# --- PlatformIO, mpremote and ampy system-wide via pipx ---
+export PIPX_HOME=/opt/pipx
+export PIPX_BIN_DIR=/usr/local/bin
+for tool in platformio mpremote adafruit-ampy; do
+  if pipx install "$tool" >>"$LOG" 2>&1; then
+    echo "OK      $tool (pipx)" | tee -a "$LOG"
+  else
+    echo "FAILED  $tool (pipx)" | tee -a "$LOG"
+  fi
+done
+chmod -R a+rX /opt/pipx 2>/dev/null || true
+
+# --- Sense HAT: library + emulator in their own venv ---
+# --system-site-packages so the Debian packages python3-gi/numpy/pil are used
+if python3 -m venv --system-site-packages /opt/sense-hat >>"$LOG" 2>&1 \
+   && /opt/sense-hat/bin/pip install --no-cache-dir sense-emu sense-hat >>"$LOG" 2>&1; then
+  for b in sense_emu_gui; do
+    [ -x "/opt/sense-hat/bin/$b" ] && ln -sf "/opt/sense-hat/bin/$b" "/usr/local/bin/$b"
+  done
+  ln -sf /opt/sense-hat/bin/python /usr/local/bin/sense-python
+  echo "OK      sense-emu + sense-hat" | tee -a "$LOG"
+else
+  echo "FAILED  sense-emu" | tee -a "$LOG"
+fi
+
+apt-get clean
+rm -rf /var/lib/apt/lists/* /root/.cache
+exit 0

@@ -1,0 +1,8 @@
+# --- LDAP login (off until someone runs "sudo hark-ldap") ---
+nslcd
+libnss-ldapd
+libpam-ldapd
+ldap-utils
+# --- LTS: automatic security updates on installed machines ---
+unattended-upgrades
+apt-listchanges

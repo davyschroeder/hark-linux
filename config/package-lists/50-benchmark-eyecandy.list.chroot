@@ -1,0 +1,12 @@
+# --- Benchmarks & hardware info (wiki: Hardinfo, hdparm, sysbench, glmark2) ---
+hdparm
+sysbench
+smartmontools
+stress-ng
+mesa-utils
+inxi
+# hardinfo/hardinfo2, glmark2 and DisplayCAL: optional via the extras hook
+
+# --- Eyecandy ---
+cmatrix
+# hollywood: optional via the extras hook

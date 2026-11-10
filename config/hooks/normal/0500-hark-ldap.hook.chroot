@@ -1,0 +1,7 @@
+#!/bin/sh
+# LDAP packages are installed but OFF until "sudo hark-ldap" is run.
+# That way a live session or a machine outside the space never waits for an LDAP server.
+set -e
+systemctl disable nslcd.service 2>/dev/null || true
+pam-auth-update --package --disable ldap 2>/dev/null || pam-auth-update --disable ldap 2>/dev/null || true
+sed -i -E '/^(passwd|group|shadow|netgroup):/ s/[[:space:]]+ldap\b//g' /etc/nsswitch.conf

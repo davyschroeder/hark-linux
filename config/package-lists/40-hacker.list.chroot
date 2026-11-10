@@ -1,0 +1,19 @@
+# --- Programming & network ---
+build-essential
+cmake
+gdb
+python3-dev
+geany
+meld
+ghex
+binwalk
+nmap
+wireshark
+tcpdump
+netcat-openbsd
+iperf3
+mtr-tiny
+whois
+bind9-dnsutils
+traceroute
+ethtool

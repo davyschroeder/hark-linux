@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Hark first login
+Exec=hark-first-login
+Type=Application
+NoDisplay=true
+X-GNOME-Autostart-enabled=true

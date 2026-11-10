@@ -1,0 +1,17 @@
+#!/bin/sh
+# Writes the Hark entries of the start menu (jgmenu) in the current language.
+. /usr/lib/hark/i18n.sh
+D="$HOME/.config/jgmenu"; mkdir -p "$D"
+[ -f "$D/jgmenurc" ] || cp /etc/skel/.config/jgmenu/jgmenurc "$D/"
+cat > "$D/prepend.csv" <<EOT
+$(_t "Hark toolbox" "Hark-gereedschap"),terminator -T Hark -x hark-tools,/usr/share/hark/hark-menu-48.png
+Terminal,terminator,utilities-terminal
+$(_t "Files" "Bestanden"),pcmanfm-qt,system-file-manager
+Firefox,firefox-esr,firefox-esr
+^sep()
+EOT
+cat > "$D/append.csv" <<EOT
+^sep()
+$(_t "Language and keyboard" "Taal en toetsenbord"),terminator -T Hark -x hark-language,preferences-desktop-locale
+$(_t "Log out / shut down" "Afmelden / afsluiten"),lxqt-leave,system-shutdown
+EOT

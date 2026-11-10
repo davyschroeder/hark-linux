@@ -1,0 +1,20 @@
+#!/bin/sh
+# Hark menu button: plays the "Hark!" sound and opens the start menu.
+# Your own sound: put hark.wav or hark.ogg in ~/.local/share/hark/
+#                 (system-wide: /usr/share/hark/sounds/hark-custom.wav)
+# Sound off:      hark-tools > "Hark sound", or HARK_GELUID=0 in ~/.config/hark.conf
+[ -f "$HOME/.config/hark.conf" ] && . "$HOME/.config/hark.conf"
+
+if [ "${HARK_GELUID:-1}" = "1" ]; then
+  for f in "$HOME"/.local/share/hark/hark.wav "$HOME"/.local/share/hark/hark.ogg \
+           /usr/share/hark/sounds/hark-custom.wav /usr/share/hark/sounds/hark-custom.ogg \
+           /usr/share/hark/sounds/hark.wav; do
+    if [ -f "$f" ]; then
+      ( pw-play "$f" || paplay "$f" || aplay -q "$f" ) >/dev/null 2>&1 &
+      break
+    fi
+  done
+fi
+[ -n "$HARK_SOUND_ONLY" ] && { wait; exit 0; }
+
+if command -v jgmenu_run >/dev/null 2>&1; then exec jgmenu_run; else exec lxqt-runner; fi

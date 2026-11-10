@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Hark menu
+Comment=Start menu (Hark!)
+Exec=hark-menu
+Icon=/usr/share/hark/hark-menu-48.png
+Terminal=false
+Type=Application
+NoDisplay=true

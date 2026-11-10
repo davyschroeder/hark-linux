@@ -1,0 +1,260 @@
+#!/bin/bash
+# hark-tools — Hark Linux toolbox menu (English / Nederlands)
+# Large toolchains (ESP32 core, ESP-IDF, Arduino IDE 2) are downloaded on request,
+# so the ISO stays small and old machines don't fill up.
+. /usr/lib/hark/i18n.sh
+
+TITLE="Hark Linux - $(_t toolbox gereedschap)"
+ARCH="$(dpkg --print-architecture)"
+
+pause() { echo; read -rp "$(_t 'Press Enter to go back...' 'Druk op Enter om terug te gaan...')" _; }
+msg()   { whiptail --title "$TITLE" --msgbox "$1" "${2:-10}" "${3:-62}"; }
+
+pick_port() {
+  local ports=() p
+  for p in /dev/ttyUSB* /dev/ttyACM*; do [ -e "$p" ] && ports+=("$p" ""); done
+  if [ ${#ports[@]} -eq 0 ]; then
+    msg "$(_t 'No serial port found.\nConnect your Arduino/ESP32 and try again.' \
+             'Geen seriële poort gevonden.\nSluit je Arduino/ESP32 aan en probeer opnieuw.')" 9 54
+    return 1
+  fi
+  whiptail --title "$TITLE" --menu "$(_t 'Choose a port' 'Kies een poort')" 15 50 6 "${ports[@]}" 3>&1 1>&2 2>&3
+}
+
+esp32_core() {
+  command -v arduino-cli >/dev/null || { _t "arduino-cli is missing." "arduino-cli ontbreekt."; echo; pause; return; }
+  echo ">> $(_t 'Updating board indexes' 'Board-indexen bijwerken')..."
+  arduino-cli core update-index
+  echo ">> $(_t 'Installing ESP32 core (~500 MB)' 'ESP32-core installeren (± 500 MB)')..."
+  arduino-cli core install esp32:esp32
+  echo ">> $(_t 'Installing Arduino AVR core' 'Arduino AVR-core installeren')..."
+  arduino-cli core install arduino:avr
+  echo; _t "Done. Example:" "Klaar. Voorbeeld:"; echo
+  echo "  arduino-cli compile -b esp32:esp32:esp32 ~/hark-examples/esp32_blink"
+  pause
+}
+
+esp_idf() {
+  local dir="$HOME/esp/esp-idf"
+  if [ -d "$dir" ]; then _t "ESP-IDF is already in $dir" "ESP-IDF staat al in $dir"; echo; pause; return; fi
+  echo ">> $(_t "Downloading ESP-IDF (Espressif SDK) to $dir (~2 GB)" "ESP-IDF (Espressif SDK) downloaden naar $dir (± 2 GB)")..."
+  mkdir -p "$HOME/esp"
+  git clone --depth 1 --recursive --shallow-submodules -b v5.4 \
+    https://github.com/espressif/esp-idf.git "$dir" || { pause; return; }
+  "$dir/install.sh" esp32,esp32s3,esp32c3
+  grep -q "alias get_idf" "$HOME/.bashrc" || echo "alias get_idf='. $dir/export.sh'" >> "$HOME/.bashrc"
+  echo; _t "Done. Open a new terminal and type: get_idf" "Klaar. Open een nieuwe terminal en typ: get_idf"; echo
+  pause
+}
+
+arduino_ide2() {
+  if [ "$ARCH" != "amd64" ]; then
+    msg "$(_t 'Arduino IDE 2 is 64-bit only.\nOn this PC use Arduino IDE 1.8 or arduino-cli.' \
+             'Arduino IDE 2 bestaat alleen voor 64-bit.\nGebruik op deze pc Arduino IDE 1.8 of arduino-cli.')"
+    return
+  fi
+  local dest="$HOME/Applications" url
+  mkdir -p "$dest" "$HOME/.local/share/applications"
+  echo ">> $(_t 'Looking up the latest Arduino IDE 2' 'Nieuwste Arduino IDE 2 opzoeken')..."
+  url=$(curl -fsSL https://api.github.com/repos/arduino/arduino-ide/releases/latest \
+        | grep -o 'https://[^"]*Linux_64bit\.AppImage' | head -n1)
+  [ -z "$url" ] && { _t "Could not find the download." "Kon de download niet vinden."; echo; pause; return; }
+  curl -fL "$url" -o "$dest/arduino-ide.AppImage" && chmod +x "$dest/arduino-ide.AppImage"
+  cat > "$HOME/.local/share/applications/arduino-ide2.desktop" <<EOF
+[Desktop Entry]
+Name=Arduino IDE 2
+Exec=$dest/arduino-ide.AppImage --no-sandbox
+Icon=arduino
+Type=Application
+Categories=Development;Electronics;
+EOF
+  echo "$(_t Done Klaar): $dest/arduino-ide.AppImage"
+  pause
+}
+
+serial_monitor() {
+  local p baud
+  p=$(pick_port) || return
+  baud=$(whiptail --title "$TITLE" --menu "Baud rate" 15 46 6 \
+    115200 "$(_t 'ESP32 / most sketches' 'ESP32 / meeste sketches')" \
+    9600 "$(_t 'Arduino default' 'Arduino standaard')" \
+    57600 "" 74880 "ESP8266 boot" 3>&1 1>&2 2>&3) || return
+  clear; _t "Quit with Ctrl+A, then Ctrl+X" "Afsluiten met Ctrl+A, daarna Ctrl+X"; echo; sleep 1
+  picocom -b "$baud" "$p"
+}
+
+esp_info() {
+  local p
+  p=$(pick_port) || return
+  clear; esptool --port "$p" chip_id 2>/dev/null || esptool.py --port "$p" chip_id
+  pause
+}
+
+micropython_flash() {
+  msg "$(_t 'MicroPython on an ESP32:\n\n1. Download the .bin from micropython.org/download/ESP32_GENERIC\n2. Choose the port and the file next.\n\nWARNING: the ESP32 flash will be erased.' \
+           'MicroPython op een ESP32:\n\n1. Download de .bin van micropython.org/download/ESP32_GENERIC\n2. Kies hierna de poort en het bestand.\n\nLET OP: de flash van de ESP32 wordt gewist.')" 14 68
+  local p bin
+  p=$(pick_port) || return
+  bin=$(whiptail --title "$TITLE" --inputbox "$(_t 'Path to the .bin file' 'Pad naar het .bin-bestand')" 9 62 "$HOME/Downloads/" 3>&1 1>&2 2>&3) || return
+  [ -f "$bin" ] || { _t "File not found: $bin" "Bestand niet gevonden: $bin"; echo; pause; return; }
+  clear
+  esptool --port "$p" erase_flash && esptool --port "$p" --baud 460800 write_flash 0x1000 "$bin"
+  echo; _t "Done. Connect with:  mpremote connect $p" "Klaar. Verbinden met:  mpremote connect $p"; echo
+  pause
+}
+
+sense_hat() {
+  if command -v sense_emu_gui >/dev/null; then
+    (sense_emu_gui >/dev/null 2>&1 &)
+    msg "$(_t 'The Sense HAT emulator is starting.\n\nExample scripts: ~/hark-examples/sense-hat\nRun them with:  sense-python rainbow.py' \
+             'De Sense HAT-emulator start.\n\nVoorbeeldscripts: ~/hark-examples/sense-hat\nStart ze met:  sense-python rainbow.py')" 12 62
+  else
+    msg "$(_t 'The Sense HAT emulator is not installed (see /var/log/hark-extras.log).' \
+             'De Sense HAT-emulator is niet geïnstalleerd (zie /var/log/hark-extras.log).')" 9 62
+  fi
+}
+
+network_scan() {
+  local net
+  net=$(ip -o -4 route show scope link | awk '{print $1; exit}')
+  [ -z "$net" ] && { _t "No network found." "Geen netwerk gevonden."; echo; pause; return; }
+  whiptail --title "$TITLE" --yesno "$(_t "Look for devices on your own network ($net)?\n\nOnly do this on networks you have permission for." \
+                                         "Apparaten zoeken op je eigen netwerk ($net)?\n\nDoe dit alleen op netwerken waar je toestemming voor hebt.")" 11 62 || return
+  clear; echo ">> $net ..."; nmap -sn "$net"
+  echo; echo ">> mDNS:"
+  timeout 5 avahi-browse -art 2>/dev/null | grep -E '^=' | awk '{print $4, $7}' | sort -u
+  pause
+}
+
+ssh_toggle() {
+  if systemctl is-active --quiet ssh; then
+    whiptail --title "$TITLE" --yesno "$(_t 'SSH server is ON. Turn it off?' 'SSH-server staat AAN. Uitzetten?')" 8 46 \
+      && sudo systemctl disable --now ssh
+  else
+    whiptail --title "$TITLE" --yesno "$(_t 'Turn on the SSH server?\nSet a strong password first (passwd).' \
+                                           'SSH-server aanzetten?\nZorg eerst voor een sterk wachtwoord (passwd).')" 9 52 \
+      && sudo systemctl enable --now ssh
+  fi
+}
+
+sysinfo() {
+  clear
+  if command -v fastfetch >/dev/null; then fastfetch
+  elif command -v neofetch >/dev/null; then neofetch
+  else cat /etc/hark-release; uname -a; free -h; fi
+  echo; echo "zram swap:"; swapon --show
+  echo; _t "Serial ports:" "Seriële poorten:"; echo
+  ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null || echo "  -"
+  pause
+}
+
+benchmark() {
+  local k d
+  k=$(whiptail --title "$TITLE" --menu "$(_t 'Benchmarks and hardware info' 'Benchmarks en hardware-info')" 17 66 7 \
+    1 "$(_t 'Hardware overview (inxi)' 'Hardware-overzicht (inxi)')" \
+    2 "$(_t 'Hardinfo (graphical)' 'Hardinfo (grafisch)')" \
+    3 "$(_t 'CPU test (sysbench, 1 and all cores)' 'CPU-test (sysbench, 1 en alle kernen)')" \
+    4 "$(_t 'Memory test (sysbench)' 'Geheugentest (sysbench)')" \
+    5 "$(_t 'Disk read speed (hdparm)' 'Schijfsnelheid lezen (hdparm)')" \
+    6 "$(_t 'Graphics (glmark2)' 'Grafisch (glmark2)')" \
+    7 "$(_t 'Disk health (SMART)' 'Schijfgezondheid (SMART)')" 3>&1 1>&2 2>&3) || return
+  clear
+  case "$k" in
+    1) inxi -Fxz ;;
+    2) ( (hardinfo2 || hardinfo) >/dev/null 2>&1 & ); return ;;
+    3) sysbench cpu --threads=1 --time=10 run | grep -E 'events per second|total time'
+       sysbench cpu --threads="$(nproc)" --time=10 run | grep -E 'events per second|total time' ;;
+    4) sysbench memory --memory-total-size=2G run | grep -E 'transferred|total time' ;;
+    5) lsblk -d -o NAME,SIZE,MODEL,ROTA; d=$(lsblk -dn -o NAME | grep -v -e loop -e sr | head -n1)
+       echo; sudo hdparm -tT "/dev/$d" ;;
+    6) (glmark2 2>/dev/null || glmark2-x11) | tail -n 5 ;;
+    7) for d in $(lsblk -dn -o NAME | grep -v -e loop -e sr); do echo "== /dev/$d"; sudo smartctl -H "/dev/$d" | tail -n 2; done ;;
+  esac
+  pause
+}
+
+pico8() {
+  msg "$(_t 'PICO-8 is commercial (lexaloffle.com), so it is not included in Hark.\n\nGot a licence? Download the Linux zip (pico-8_*_amd64.zip or _i386.zip) to ~/Downloads, then press OK.' \
+           'PICO-8 is commercieel (lexaloffle.com) en zit daarom niet in Hark.\n\nHeb je een licentie? Download de Linux-zip (pico-8_*_amd64.zip of _i386.zip) naar ~/Downloads en kies daarna OK.')" 12 68
+  local zip
+  zip=$(ls -t "$HOME"/Downloads/pico-8*.zip 2>/dev/null | head -n1)
+  [ -z "$zip" ] && { msg "$(_t 'No pico-8*.zip found in ~/Downloads.' 'Geen pico-8*.zip gevonden in ~/Downloads.')" 8 52; return; }
+  clear; echo ">> $zip -> /opt/pico-8"
+  sudo rm -rf /opt/pico-8 && sudo unzip -q "$zip" -d /opt && sudo chmod -R a+rX /opt/pico-8
+  sudo tee /usr/share/applications/pico-8.desktop >/dev/null <<EOF
+[Desktop Entry]
+Name=PICO-8
+Comment=Fantasy console
+Exec=/opt/pico-8/pico8
+Icon=/opt/pico-8/lexaloffle-pico8.png
+Type=Application
+Categories=Game;Development;Emulator;
+EOF
+  sudo ln -sf /opt/pico-8/pico8 /usr/local/bin/pico8
+  _t "Done: start with 'pico8' or from the menu." "Klaar: start met 'pico8' of via het menu."; echo
+  pause
+}
+
+menu_sound() {
+  local now k f
+  now=$(_t on aan); grep -qs 'HARK_GELUID=0' "$HOME/.config/hark.conf" && now=$(_t off uit)
+  k=$(whiptail --title "$TITLE" --menu "$(_t "Hark sound on the menu button is $now" "Hark-geluid bij de menuknop staat $now")" 15 66 4 \
+    on "$(_t 'Sound on' 'Geluid aan')" off "$(_t 'Sound off' 'Geluid uit')" \
+    own "$(_t 'Choose your own sound (.wav/.ogg)' 'Eigen geluid kiezen (.wav/.ogg)')" \
+    test "$(_t 'Test' 'Testen')" 3>&1 1>&2 2>&3) || return
+  mkdir -p "$HOME/.config" "$HOME/.local/share/hark"; touch "$HOME/.config/hark.conf"
+  sed -i '/^HARK_GELUID=/d' "$HOME/.config/hark.conf"
+  case "$k" in
+    on)  echo "HARK_GELUID=1" >> "$HOME/.config/hark.conf" ;;
+    off) echo "HARK_GELUID=0" >> "$HOME/.config/hark.conf" ;;
+    own) echo "HARK_GELUID=1" >> "$HOME/.config/hark.conf"
+         f=$(whiptail --title "$TITLE" --inputbox "$(_t 'Path to your sound file' 'Pad naar je geluidsbestand')" 9 66 "$HOME/Downloads/" 3>&1 1>&2 2>&3) || return
+         rm -f "$HOME"/.local/share/hark/hark.wav "$HOME"/.local/share/hark/hark.ogg
+         case "$f" in *.ogg) cp "$f" "$HOME/.local/share/hark/hark.ogg" ;; *) cp "$f" "$HOME/.local/share/hark/hark.wav" ;; esac ;;
+    test) echo "HARK_GELUID=1" >> "$HOME/.config/hark.conf"; HARK_SOUND_ONLY=1 hark-menu ;;
+  esac
+}
+
+while true; do
+  choice=$(whiptail --title "$TITLE" --menu "$(_t 'What do you want to do?' 'Wat wil je doen?')" 27 72 19 \
+    1  "$(_t 'Install ESP32 and Arduino cores (arduino-cli)' 'ESP32- en Arduino-cores installeren (arduino-cli)')" \
+    2  "$(_t 'Install ESP-IDF (Espressif SDK, large)' 'ESP-IDF installeren (Espressif SDK, groot)')" \
+    3  "$(_t 'Download Arduino IDE 2 (64-bit only)' 'Arduino IDE 2 downloaden (alleen 64-bit)')" \
+    4  "$(_t 'Open serial monitor' 'Seriële monitor openen')" \
+    5  "$(_t 'Read ESP32 chip info' 'ESP32-chipinfo uitlezen')" \
+    6  "$(_t 'Flash MicroPython to an ESP32' 'MicroPython op ESP32 flashen')" \
+    7  "$(_t 'Start Sense HAT emulator' 'Sense HAT-emulator starten')" \
+    8  "$(_t 'Find devices on my network' 'Apparaten op mijn netwerk zoeken')" \
+    9  "$(_t 'SSH server on/off' 'SSH-server aan/uit')" \
+    10 "$(_t 'System info' 'Systeeminfo')" \
+    11 "$(_t 'Benchmarks and hardware info' 'Benchmarks en hardware-info')" \
+    12 "$(_t 'Log in with LDAP (NURDspace accounts)' 'Inloggen met LDAP (NURDspace-accounts)')" \
+    13 "$(_t 'Install PICO-8 (your own licence)' 'PICO-8 installeren (eigen licentie)')" \
+    14 "$(_t 'Hark sound of the menu button' 'Hark-geluid van de menuknop')" \
+    15 "$(_t 'Language and keyboard' 'Taal en toetsenbord')" \
+    16 "$(_t 'Update Hark (apt upgrade)' 'Hark bijwerken (apt upgrade)')" \
+    17 "$(_t 'Cheat sheet (hark-welcome)' 'Spiekbriefje (hark-welcome)')" \
+    18 "Eyecandy: cmatrix" \
+    0  "$(_t 'Quit' 'Afsluiten')" 3>&1 1>&2 2>&3) || exit 0
+  case "$choice" in
+    1) clear; esp32_core ;;
+    2) clear; esp_idf ;;
+    3) clear; arduino_ide2 ;;
+    4) serial_monitor ;;
+    5) esp_info ;;
+    6) micropython_flash ;;
+    7) sense_hat ;;
+    8) network_scan ;;
+    9) ssh_toggle ;;
+    10) sysinfo ;;
+    11) benchmark ;;
+    12) clear; sudo hark-ldap; pause ;;
+    13) pico8 ;;
+    14) menu_sound ;;
+    15) hark-language ;;
+    16) clear; sudo apt update && sudo apt full-upgrade; pause ;;
+    17) clear; hark-welcome; pause ;;
+    18) cmatrix -ab ;;
+    0) exit 0 ;;
+  esac
+done

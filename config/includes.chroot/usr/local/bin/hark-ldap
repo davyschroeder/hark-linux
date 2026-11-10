@@ -1,0 +1,63 @@
+#!/bin/bash
+# hark-ldap — let this machine accept LDAP accounts (e.g. the NURDspace accounts)
+#   sudo hark-ldap        set up interactively
+#   sudo hark-ldap off    switch LDAP off again
+#   hark-ldap test        check the connection and the users
+set -e
+. /usr/lib/hark/i18n.sh
+T="Hark LDAP"
+[ "$1" = "test" ] || [ "$(id -u)" -eq 0 ] || exec sudo "$0" "$@"
+
+if [ "$1" = "off" ] || [ "$1" = "uit" ]; then
+  pam-auth-update --disable ldap mkhomedir || true
+  sed -i -E '/^(passwd|group|shadow):/ s/[[:space:]]+ldap\b//g' /etc/nsswitch.conf
+  systemctl disable --now nslcd
+  _t "LDAP is off." "LDAP staat uit."; echo
+  exit 0
+fi
+
+if [ "$1" = "test" ]; then
+  URI=$(awk '$1=="uri"{print $2; exit}' /etc/nslcd.conf)
+  BASE=$(awk '$1=="base"{print $2; exit}' /etc/nslcd.conf)
+  echo "Server: $URI   Base: $BASE"
+  ldapsearch -x -H "$URI" -b "$BASE" -LLL '(objectClass=posixAccount)' uid 2>&1 | grep '^uid:' | head -n 10 \
+    || _t "No posixAccount users found (or no connection)." "Geen posixAccount-gebruikers gevonden (of geen verbinding)."
+  echo; _t "Visible through NSS:" "Zichtbaar via NSS:"; echo
+  getent passwd | awk -F: '$3>=1000' | head -n 10
+  exit 0
+fi
+
+URI=$(whiptail --title "$T" --inputbox "$(_t 'LDAP server (e.g. ldaps://ldap.example.org)' 'LDAP-server (bijv. ldaps://ldap.voorbeeld.nl)')" 9 66 "" 3>&1 1>&2 2>&3) || exit 1
+BASE=$(whiptail --title "$T" --inputbox "$(_t 'Base DN (e.g. dc=example,dc=org)' 'Basis-DN (bijv. dc=voorbeeld,dc=nl)')" 9 66 "" 3>&1 1>&2 2>&3) || exit 1
+BINDDN=$(whiptail --title "$T" --inputbox "$(_t 'Bind DN (empty = anonymous)' 'Bind-DN (leeg = anoniem)')" 9 66 "" 3>&1 1>&2 2>&3) || exit 1
+STARTTLS=0
+case "$URI" in ldap://*)
+  whiptail --title "$T" --yesno "$(_t 'Use StartTLS? (recommended if the server supports it)' 'StartTLS gebruiken? (aanbevolen als de server het ondersteunt)')" 8 66 && STARTTLS=1 ;;
+esac
+BINDPW=""
+[ -n "$BINDDN" ] && BINDPW=$(whiptail --title "$T" --passwordbox "$(_t 'Bind password' 'Bind-wachtwoord')" 9 66 3>&1 1>&2 2>&3)
+
+{
+  echo "uid nslcd"
+  echo "gid nslcd"
+  echo "uri $URI"
+  echo "base $BASE"
+  if [ -n "$BINDDN" ]; then echo "binddn $BINDDN"; echo "bindpw $BINDPW"; fi
+  echo "tls_reqcert demand"
+  echo "tls_cacertfile /etc/ssl/certs/ca-certificates.crt"
+  [ "$STARTTLS" = 1 ] && echo "ssl start_tls"
+  echo "nss_initgroups_ignoreusers ALLLOCAL"
+  echo "bind_timelimit 5"
+  echo "timelimit 10"
+} > /etc/nslcd.conf
+chown root:nslcd /etc/nslcd.conf; chmod 640 /etc/nslcd.conf
+
+for db in passwd group shadow; do
+  grep -qE "^$db:.*\bldap\b" /etc/nsswitch.conf || sed -i -E "s/^($db:.*)$/\1 ldap/" /etc/nsswitch.conf
+done
+pam-auth-update --enable ldap mkhomedir
+systemctl enable --now nslcd
+systemctl restart nscd 2>/dev/null || true
+
+_t "LDAP is on. Check:" "LDAP staat aan. Controle:"; echo
+"$0" test

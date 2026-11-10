@@ -1,0 +1,93 @@
+{
+  "policies": {
+    "Homepage": {
+      "URL": "file:///usr/share/hark/welcome.html",
+      "StartPage": "homepage",
+      "Locked": false
+    },
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "DontCheckDefaultBrowser": true,
+    "OverrideFirstRunPage": "",
+    "NoDefaultBookmarks": true,
+    "DisplayBookmarksToolbar": "always",
+    "ExtensionSettings": {
+      "uBlock0@raymondhill.net": {
+        "installation_mode": "normal_installed",
+        "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+      }
+    },
+    "ManagedBookmarks": [
+      {
+        "toplevel_name": "NURDspace"
+      },
+      {
+        "name": "Hark Linux",
+        "url": "file:///usr/share/hark/welcome.html"
+      },
+      {
+        "name": "NURDspace wiki",
+        "url": "https://nurdspace.nl/"
+      },
+      {
+        "name": "Jarvis (Home Assistant)",
+        "url": "http://jarvis.vm.nurd.space/"
+      },
+      {
+        "name": "Hark Linux on the wiki",
+        "url": "https://nurdspace.nl/Hark_Linux"
+      },
+      {
+        "name": "HARKboot",
+        "url": "https://nurdspace.nl/HARKboot"
+      },
+      {
+        "name": "Make",
+        "children": [
+          {
+            "name": "arduino-cli",
+            "url": "https://docs.arduino.cc/arduino-cli/"
+          },
+          {
+            "name": "Arduino-ESP32",
+            "url": "https://docs.espressif.com/projects/arduino-esp32/en/latest/"
+          },
+          {
+            "name": "ESP-IDF",
+            "url": "https://docs.espressif.com/projects/esp-idf/en/stable/"
+          },
+          {
+            "name": "PlatformIO",
+            "url": "https://docs.platformio.org/"
+          },
+          {
+            "name": "MicroPython firmware",
+            "url": "https://micropython.org/download/"
+          },
+          {
+            "name": "Sense HAT API",
+            "url": "https://pythonhosted.org/sense-hat/"
+          }
+        ]
+      },
+      {
+        "name": "Design",
+        "children": [
+          {
+            "name": "FreeCAD wiki",
+            "url": "https://wiki.freecad.org/"
+          },
+          {
+            "name": "KiCad docs",
+            "url": "https://docs.kicad.org/"
+          },
+          {
+            "name": "OpenSCAD cheat sheet",
+            "url": "https://openscad.org/cheatsheet/"
+          }
+        ]
+      }
+    ]
+  }
+}

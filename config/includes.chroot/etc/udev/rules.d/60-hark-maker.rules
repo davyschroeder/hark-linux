@@ -1,0 +1,35 @@
+# Hark Linux — make microcontrollers and programmers usable without sudo
+# (user must be in plugdev/dialout; the live user already is)
+
+# USB-serial chips (Arduino clones, ESP32 devkits, NodeMCU)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1a86", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="067b", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# Espressif native USB (ESP32-S2/S3/C3/C6) and JTAG
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="303a", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# Arduino (genuine) and Adafruit
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="2341", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="2a03", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="239a", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# Raspberry Pi Pico / RP2040 / RP2350
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="2e8a", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# ST-Link, STM32 DFU
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", MODE="0660", GROUP="plugdev", TAG+="uaccess", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# USBasp and USBtinyISP (AVR programmers)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="05dc", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1781", ATTRS{idProduct}=="0c9f", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+
+# Cheap logic analyzers (fx2lafw / Saleae clones) for PulseView
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0925", ATTRS{idProduct}=="3881", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="608c", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+
+# I2C/SPI/GPIO devices (USB adapters, or a Pi running Hark)
+SUBSYSTEM=="i2c-dev", GROUP="i2c", MODE="0660"
+SUBSYSTEM=="spidev", GROUP="spi", MODE="0660"
+SUBSYSTEM=="gpio", GROUP="gpio", MODE="0660"

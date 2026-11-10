@@ -1,0 +1,10 @@
+# Wireshark: normal users in the "wireshark" group may capture packets
+wireshark-common wireshark-common/install-setuid boolean true
+# Locale: English default, Dutch/German/UK English ready to switch to
+locales locales/default_environment_locale select en_US.UTF-8
+locales locales/locales_to_be_generated multiselect en_US.UTF-8 UTF-8, en_GB.UTF-8 UTF-8, nl_NL.UTF-8 UTF-8, de_DE.UTF-8 UTF-8
+# LDAP: configure nothing at build time; hark-ldap does that later
+nslcd nslcd/ldap-uris string ldap://127.0.0.1/
+nslcd nslcd/ldap-base string dc=example,dc=net
+libnss-ldapd libnss-ldapd/nsswitch multiselect
+libpam-ldapd libpam-ldapd/enable_shadow boolean true

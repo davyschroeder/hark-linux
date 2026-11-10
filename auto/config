@@ -1,0 +1,50 @@
+#!/bin/sh
+# Hark Linux — live-build configuration
+# Usage:  HARK_ARCH=amd64 lb config   (default, Debian 13 "trixie")
+#           HARK_ARCH=i386  lb config   (old 32-bit PCs, Debian 12 "bookworm")
+set -e
+
+HARK_ARCH="${HARK_ARCH:-amd64}"
+HARK_VERSION="$(cat VERSION 2>/dev/null || echo 0.1)"
+
+case "$HARK_ARCH" in
+  amd64)
+    DIST="trixie"
+    FLAVOUR="amd64"
+    ;;
+  i386)
+    # Debian 13 has no i386 kernel/installer any more; bookworm does (LTS until 2028).
+    # "686" = no PAE needed, also runs on Pentium M / early Atom / Celeron M.
+    DIST="bookworm"
+    FLAVOUR="686"
+    ;;
+  *)
+    echo "Unknown HARK_ARCH: $HARK_ARCH (choose amd64 or i386)" >&2
+    exit 1
+    ;;
+esac
+
+LIVE_GROUPS="audio,cdrom,dip,floppy,video,plugdev,netdev,dialout,sudo,bluetooth,lpadmin,scanner,i2c,gpio,wireshark"
+
+lb config noauto \
+  --mode debian \
+  --distribution "$DIST" \
+  --architectures "$HARK_ARCH" \
+  --linux-flavours "$FLAVOUR" \
+  --archive-areas "main contrib non-free non-free-firmware" \
+  --security true \
+  --updates true \
+  --apt-recommends false \
+  --firmware-chroot true \
+  --firmware-binary true \
+  --debian-installer live \
+  --debian-installer-gui true \
+  --memtest none \
+  --binary-images iso-hybrid \
+  --iso-application "Hark Linux" \
+  --iso-publisher "Invict Game Studio / hackerspace" \
+  --iso-volume "HARK_${HARK_VERSION}_${HARK_ARCH}" \
+  --image-name "hark-linux-${HARK_VERSION}-${HARK_ARCH}" \
+  --bootappend-live "boot=live components quiet splash username=nurd user-fullname=NURD hostname=hark locales=en_US.UTF-8,nl_NL.UTF-8,de_DE.UTF-8,en_GB.UTF-8 keyboard-layouts=us timezone=Europe/Amsterdam live-config.user-default-groups=${LIVE_GROUPS}" \
+  --cache true \
+  "${@}"

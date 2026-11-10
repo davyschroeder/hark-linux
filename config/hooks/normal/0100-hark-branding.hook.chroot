@@ -1,0 +1,51 @@
+#!/bin/sh
+# Hark Linux — name, logo and identity
+set -e
+
+VERSION="0.1"
+. /etc/os-release
+BASE="Debian ${VERSION_ID:-} (${VERSION_CODENAME:-})"
+
+cat > /etc/hark-release <<EOF
+Hark Linux ${VERSION}
+Based on ${BASE}
+EOF
+
+# os-release stays Debian-compatible (ID_LIKE) so apt and tools keep working
+cat > /usr/lib/os-release <<EOF
+PRETTY_NAME="Hark Linux ${VERSION}"
+NAME="Hark Linux"
+VERSION_ID="${VERSION}"
+VERSION="${VERSION} (${VERSION_CODENAME})"
+VERSION_CODENAME=${VERSION_CODENAME}
+ID=hark
+ID_LIKE=debian
+HOME_URL="https://nurdspace.nl/Hark_Linux"
+SUPPORT_URL="https://github.com/davyschroeder/hark-linux/issues"
+BUG_REPORT_URL="https://github.com/davyschroeder/hark-linux/issues"
+EOF
+ln -sf ../usr/lib/os-release /etc/os-release
+
+cat > /etc/issue <<'EOF'
+
+  _   _            _      _      _
+ | | | | __ _ _ __| | __ | |    (_)_ __  _   ___  __
+ | |_| |/ _` | '__| |/ / | |    | | '_ \| | | \ \/ /
+ |  _  | (_| | |  |   <  | |___ | | | | | |_| |>  <
+ |_| |_|\__,_|_|  |_|\_\ |_____||_|_| |_|\__,_/_/\_\
+
+ Hark Linux  -  \n  -  \l
+
+EOF
+cp /etc/issue /etc/issue.net
+sed -i 's/\\[nl]//g' /etc/issue.net
+
+cat > /etc/motd <<'EOF'
+
+  Welcome to Hark Linux - the NURDspace distro.
+  Type  hark-tools     for the toolbox menu
+  Type  hark-welcome   for the cheat sheet
+  Type  hark-language  to change language/keyboard
+
+EOF
+

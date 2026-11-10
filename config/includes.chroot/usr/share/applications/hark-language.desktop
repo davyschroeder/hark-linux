@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Language and keyboard
+Name[nl]=Taal en toetsenbord
+Exec=terminator -T Hark -x hark-language
+Icon=preferences-desktop-locale
+Terminal=false
+Type=Application
+Categories=Settings;

@@ -1,0 +1,15 @@
+# Hark Linux startmenu (jgmenu)
+csv_cmd = apps
+position_mode = pointer
+menu_width = 270
+menu_padding_top = 6
+item_height = 28
+font = DejaVu Sans 10
+icon_size = 22
+icon_theme = Papirus-Dark
+color_menu_bg = #0b0f14 96
+color_menu_border = #39ff88 60
+color_norm_fg = #e8f1ee 100
+color_sel_bg = #39ff88 25
+color_sel_fg = #ffffff 100
+color_sep_fg = #39ff88 30

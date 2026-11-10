@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Sense HAT emulator
+Name[nl]=Sense HAT-emulator
+Comment=Emulate a Raspberry Pi Sense HAT without hardware
+Comment[nl]=Raspberry Pi Sense HAT nabootsen zonder hardware
+Exec=sense_emu_gui
+Icon=applications-science
+Terminal=false
+Type=Application
+Categories=Development;Education;Electronics;

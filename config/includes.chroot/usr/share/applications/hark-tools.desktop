@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Hark toolbox
+Name[nl]=Hark-gereedschap
+Comment=ESP32/Arduino toolchains, serial monitor, Sense HAT, benchmarks and more
+Comment[nl]=ESP32/Arduino-toolchains, seriële monitor, Sense HAT, benchmarks en meer
+Exec=terminator -T Hark --geometry 900x660 -x hark-tools
+Icon=/usr/share/hark/hark-menu-64.png
+Terminal=false
+Type=Application
+Categories=System;Development;Electronics;

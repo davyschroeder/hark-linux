@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Hark cheat sheet
+Name[nl]=Hark-spiekbriefje
+Comment=Overview of the tools in Hark Linux
+Comment[nl]=Overzicht van alle tools in Hark Linux
+Exec=terminator -T "Hark Linux" --geometry 900x880 -x hark-welcome --wait
+Icon=help-about
+Terminal=false
+Type=Application
+Categories=System;

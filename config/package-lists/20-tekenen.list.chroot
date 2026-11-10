@@ -1,0 +1,9 @@
+# --- Drawing, photo & audio ---
+gimp
+inkscape
+mypaint
+#if ARCHITECTURES amd64
+krita
+#endif
+imagemagick
+audacity

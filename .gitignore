@@ -1,0 +1,15 @@
+.build/
+cache/
+chroot/
+binary/
+*.iso
+*.contents
+*.files
+*.packages
+*.hybrid.iso.zsync
+build.log
+config/binary
+config/bootstrap
+config/chroot
+config/common
+config/source

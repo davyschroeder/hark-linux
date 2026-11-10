@@ -1,0 +1,18 @@
+#!/bin/sh
+# Hark Linux — LXQt setup: Terminator as terminal, LightDM session
+set -e
+update-alternatives --set x-terminal-emulator /usr/bin/terminator 2>/dev/null || true
+
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/60-hark.conf <<'EOT'
+[Seat:*]
+user-session=lxqt
+greeter-show-manual-login=true
+greeter-hide-users=false
+EOT
+
+# Openbox under LXQt: no animations (faster on old graphics cards)
+for rc in /usr/share/lxqt/openbox/rc.xml /etc/xdg/openbox/rc.xml; do
+  [ -f "$rc" ] && sed -i 's#<animateIconify>yes</animateIconify>#<animateIconify>no</animateIconify>#' "$rc"
+done
+exit 0

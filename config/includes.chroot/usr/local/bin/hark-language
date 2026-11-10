@@ -1,0 +1,35 @@
+#!/bin/bash
+# hark-language — choose system language and keyboard layout
+. /usr/lib/hark/i18n.sh
+T="Hark Linux"
+
+LANGSEL=$(whiptail --title "$T" --menu "$(_t 'Language' 'Taal')" 15 60 5 \
+  en_US.UTF-8 "English (US)" \
+  en_GB.UTF-8 "English (UK)" \
+  nl_NL.UTF-8 "Nederlands" \
+  de_DE.UTF-8 "Deutsch" 3>&1 1>&2 2>&3) || exit 0
+
+KBD=$(whiptail --title "$T" --menu "$(_t 'Keyboard layout' 'Toetsenbordindeling')" 16 60 6 \
+  us "US (QWERTY)" \
+  "us intl" "US international (é, ë, ...)" \
+  gb "UK" \
+  de "Deutsch (QWERTZ)" \
+  be "Belgisch (AZERTY)" 3>&1 1>&2 2>&3) || exit 0
+LAYOUT=${KBD%% *}; VARIANT=""; [ "$KBD" = "us intl" ] && VARIANT=intl
+
+echo ">> $LANGSEL / $KBD"
+sudo sed -i "s/^# *\(${LANGSEL//./\\.} UTF-8\)/\1/" /etc/locale.gen
+sudo locale-gen >/dev/null
+sudo update-locale LANG="$LANGSEL" LANGUAGE="${LANGSEL%%.*}"
+sudo localectl set-x11-keymap "$LAYOUT" "" "$VARIANT" 2>/dev/null || true
+sudo sed -i "s/^XKBLAYOUT=.*/XKBLAYOUT=\"$LAYOUT\"/; s/^XKBVARIANT=.*/XKBVARIANT=\"$VARIANT\"/" /etc/default/keyboard
+setxkbmap "$LAYOUT" ${VARIANT:+-variant $VARIANT} 2>/dev/null || true
+# keep the Hark tools in step even if the system locale is overridden elsewhere
+mkdir -p "$HOME/.config"; touch "$HOME/.config/hark.conf"
+sed -i '/^HARK_LANG=/d' "$HOME/.config/hark.conf"
+echo "HARK_LANG=${LANGSEL%%_*}" >> "$HOME/.config/hark.conf"
+HARK_LANG=${LANGSEL%%_*} hark-menu-labels
+
+HARK_L=$( [ "${LANGSEL%%_*}" = nl ] && echo nl || echo en )
+whiptail --title "$T" --msgbox "$(_t 'Done. Log out and back in to switch the whole desktop.\n(You can also pick a language on the login screen.)' \
+  'Klaar. Meld je af en weer aan om de hele desktop om te zetten.\n(Je kunt ook op het inlogscherm een taal kiezen.)')" 10 64
