@@ -85,7 +85,6 @@ fi
 export PIPX_HOME=/opt/pipx
 export PIPX_BIN_DIR=/usr/local/bin
 TOOLS="platformio mpremote adafruit-ampy"
-command -v esptool >/dev/null || command -v esptool.py >/dev/null || TOOLS="$TOOLS esptool"
 for tool in $TOOLS; do
   if pipx install "$tool" >>"$LOG" 2>&1; then
     echo "OK      $tool (pipx)" | tee -a "$LOG"
@@ -93,6 +92,20 @@ for tool in $TOOLS; do
     echo "FAILED  $tool (pipx)" | tee -a "$LOG"
   fi
 done
+# esptool via pipx when Debian has no package. On i386 there are no binary wheels
+# for its crypto deps, so use Debian's Python libraries and an older esptool.
+if ! command -v esptool >/dev/null && ! command -v esptool.py >/dev/null; then
+  if pipx install esptool >>"$LOG" 2>&1; then
+    echo "OK      esptool (pipx)" | tee -a "$LOG"
+  else
+    try_pkg python3-cryptography python3-ecdsa python3-bitstring python3-reedsolo python3-yaml python3-intelhex
+    if pipx install --system-site-packages "esptool<4.8" >>"$LOG" 2>&1; then
+      echo "OK      esptool<4.8 (pipx, system libs)" | tee -a "$LOG"
+    else
+      echo "FAILED  esptool (pipx)" | tee -a "$LOG"
+    fi
+  fi
+fi
 chmod -R a+rX /opt/pipx 2>/dev/null || true
 
 # --- Sense HAT: library + emulator in their own venv ---
