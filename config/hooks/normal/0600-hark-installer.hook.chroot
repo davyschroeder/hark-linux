@@ -1,0 +1,105 @@
+#!/bin/sh
+# Hark Linux — graphical installer (Calamares) with Hark branding.
+# The live session gets an "Install Hark Linux" icon on the desktop and in the menu.
+# The Debian installer in the boot menu stays as the light option for old hardware.
+# If Calamares is not available for this release/architecture, it is skipped.
+set -u
+
+LOG=/var/log/hark-extras.log
+export DEBIAN_FRONTEND=noninteractive
+
+if ! apt-get install -y --no-install-recommends calamares calamares-settings-debian >>"$LOG" 2>&1; then
+  echo "FAILED  calamares (skipped; boot-menu installer only)" | tee -a "$LOG"
+  exit 0
+fi
+echo "OK      calamares" | tee -a "$LOG"
+
+CAL=/etc/calamares
+B="$CAL/branding/hark"
+mkdir -p "$B"
+# Start from Debian's branding (stylesheet, translations), then make it Hark
+[ -d "$CAL/branding/debian" ] && cp -a "$CAL/branding/debian/." "$B/"
+cp /usr/share/hark/hark-menu-256.png "$B/hark-icon.png"
+cp /usr/share/hark/hark-logo.png     "$B/hark-welcome.png"
+cp /usr/share/hark/hark-logo.png     "$B/hark-slide.png"
+
+. /etc/os-release
+cat > "$B/branding.desc" <<EOF
+---
+componentName:  hark
+
+welcomeStyleCalamares:   false
+welcomeExpandingLogo:    true
+windowExpanding:    normal
+windowSize: 800px,560px
+windowPlacement: center
+sidebar: widget
+navigation: widget
+
+strings:
+    productName:         "Hark Linux"
+    shortProductName:    "Hark"
+    version:             "${VERSION_ID:-0.1}"
+    shortVersion:        "${VERSION_ID:-0.1}"
+    versionedName:       "Hark Linux ${VERSION_ID:-0.1}"
+    shortVersionedName:  "Hark ${VERSION_ID:-0.1}"
+    bootloaderEntryName: "Hark Linux"
+    productUrl:          "https://nurdspace.nl/Hark_Linux"
+    supportUrl:          "https://github.com/davyschroeder/hark-linux/issues"
+    knownIssuesUrl:      "https://github.com/davyschroeder/hark-linux/issues"
+    releaseNotesUrl:     "https://github.com/davyschroeder/hark-linux"
+
+images:
+    productLogo:         "hark-icon.png"
+    productIcon:         "hark-icon.png"
+    productWelcome:      "hark-welcome.png"
+
+# Plain image slideshow: needs no extra QML modules (light on old hardware)
+slideshow:
+    - "hark-slide.png"
+
+style:
+   SidebarBackground:        "#07090c"
+   SidebarText:              "#e8f1ee"
+   SidebarTextCurrent:       "#07090c"
+   SidebarBackgroundCurrent: "#3ddc97"
+EOF
+
+# Use the Hark branding
+if [ -f "$CAL/settings.conf" ]; then
+  sed -i -E 's/^branding:.*/branding: hark/' "$CAL/settings.conf"
+fi
+
+# Launcher: the live user has passwordless sudo; pkexec as fallback
+cat > /usr/local/bin/hark-install <<'EOF'
+#!/bin/sh
+# Start the Hark Linux installer (Calamares) as root
+if sudo -n true 2>/dev/null; then
+  exec sudo -E /usr/bin/calamares "$@"
+fi
+exec pkexec env DISPLAY="${DISPLAY:-}" XAUTHORITY="${XAUTHORITY:-}" /usr/bin/calamares "$@"
+EOF
+chmod 755 /usr/local/bin/hark-install
+
+cat > /usr/share/applications/hark-install.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Install Hark Linux
+Name[nl]=Hark Linux installeren
+Comment=Install Hark Linux on this computer
+Comment[nl]=Installeer Hark Linux op deze computer
+TryExec=calamares
+Exec=hark-install
+Icon=system-software-install
+Terminal=false
+Categories=System;
+Keywords=install;installer;calamares;
+EOF
+
+# Hide Debian's own launcher and desktop-icon autostart (we add our own)
+for f in /usr/share/applications/install-debian.desktop /usr/share/applications/calamares.desktop; do
+  [ -f "$f" ] && { grep -q '^NoDisplay=' "$f" || echo 'NoDisplay=true' >> "$f"; }
+done
+rm -f /etc/xdg/autostart/calamares-desktop-icon.desktop
+
+exit 0

@@ -21,3 +21,14 @@ autologin-user=$LIVE_USER
 autologin-user-timeout=0
 autologin-session=lxqt
 EOT
+
+# "Install Hark Linux" icon on the desktop (only if Calamares is on this image)
+if [ -f /usr/share/applications/hark-install.desktop ]; then
+  HOME_DIR="$(getent passwd "$LIVE_USER" | cut -d: -f6)"
+  if [ -n "$HOME_DIR" ] && [ -d "$HOME_DIR" ]; then
+    mkdir -p "$HOME_DIR/Desktop"
+    cp /usr/share/applications/hark-install.desktop "$HOME_DIR/Desktop/"
+    chmod 755 "$HOME_DIR/Desktop/hark-install.desktop"
+    chown -R "$LIVE_USER:" "$HOME_DIR/Desktop"
+  fi
+fi

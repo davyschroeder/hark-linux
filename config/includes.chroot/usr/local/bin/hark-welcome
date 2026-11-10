@@ -38,7 +38,7 @@ ${C}$(_t "Emulation          " "Emulatie           ")${N}  WINE, DOSBox, VICE (C
 ${C}Eyecandy           ${N}  cmatrix, hollywood
 ${C}$(_t "Network            " "Netwerk            ")${N}  nmap, Wireshark, iperf3, mtr   ($(_t "only with permission!" "alleen met toestemming!"))
 
-${C}$(_t "Install" "Installeren")${N}  $(_t 'reboot and choose "Graphical install"' 'herstart en kies "Graphical install"')
+${C}$(_t "Install" "Installeren")${N}  $(_t '"Install Hark Linux" icon on the desktop (or "Graphical install" in the boot menu)' 'icoon "Hark Linux installeren" op het bureaublad (of "Graphical install" in het opstartmenu)')
 $(_t "Examples" "Voorbeelden"): ~/hark-examples
 EOF
 

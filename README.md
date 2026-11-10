@@ -112,6 +112,8 @@ The source file in this repo was cut from a phone screenshot of the wiki. Replac
 
 The live user is `nurd` with no password; the live session logs in to LXQt automatically. The installed system uses the account you create in the installer.
 
+To install, double-click **Install Hark Linux** on the live desktop (Calamares, Hark-branded; `config/hooks/normal/0600-hark-installer.hook.chroot`). The Debian installer ("Graphical install" in the boot menu) stays available as the light option for old hardware.
+
 ## Licence
 
 Build scripts: MIT. The Hark Linux logo belongs to NURDspace. All bundled software is under its own licence.
