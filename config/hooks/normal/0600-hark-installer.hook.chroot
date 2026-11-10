@@ -8,8 +8,12 @@ set -u
 LOG=/var/log/hark-extras.log
 export DEBIAN_FRONTEND=noninteractive
 
+# 0200-hark-extras empties the apt lists when it is done: fetch them again
+apt-get update >>"$LOG" 2>&1
 if ! apt-get install -y --no-install-recommends calamares calamares-settings-debian >>"$LOG" 2>&1; then
   echo "FAILED  calamares (skipped; boot-menu installer only)" | tee -a "$LOG"
+  tail -n 25 "$LOG"
+  apt-get clean; rm -rf /var/lib/apt/lists/*
   exit 0
 fi
 echo "OK      calamares" | tee -a "$LOG"
@@ -101,5 +105,8 @@ for f in /usr/share/applications/install-debian.desktop /usr/share/applications/
   [ -f "$f" ] && { grep -q '^NoDisplay=' "$f" || echo 'NoDisplay=true' >> "$f"; }
 done
 rm -f /etc/xdg/autostart/calamares-desktop-icon.desktop
+
+apt-get clean
+rm -rf /var/lib/apt/lists/*
 
 exit 0
