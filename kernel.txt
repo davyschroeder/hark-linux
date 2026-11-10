@@ -1,0 +1,5 @@
+System.map-6.1.0-54-686
+config-6.1.0-54-686
+firmware
+initrd.img-6.1.0-54-686
+vmlinuz-6.1.0-54-686
