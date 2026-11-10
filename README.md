@@ -20,7 +20,7 @@ English is the default language. You can switch it on the login screen, with `ha
 | Hardinfo, hdparm, sysbench, glmark2 | Included, plus inxi, smartmontools, stress-ng. `hark-tools` → *Benchmarks* runs them for you. |
 | cmatrix, hollywood | Included. |
 | WINE, DOSBox, VICE, PICO-8 | WINE, DOSBox (Staging) and VICE are included. PICO-8 is commercial, so `hark-tools` installs it from your own licensed zip. |
-| Browser bookmarks, add-ons, homepage | Firefox ESR policies: a local welcome page as homepage, a NURDspace bookmarks toolbar (wiki, Jarvis, HARKboot, maker docs), uBlock Origin, telemetry off. |
+| Browser bookmarks, add-ons, homepage | Firefox ESR policies: Ecosia as default search engine, a local welcome page as homepage, a NURDspace bookmarks toolbar (wiki, Jarvis, HARKboot, maker docs), uBlock Origin, telemetry off. |
 | Available on HARKboot | `harkboot/to-harkboot.sh` puts an ISO on the PXE server and prints the pxelinux menu entry. |
 
 ## What else is in it
