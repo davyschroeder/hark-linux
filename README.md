@@ -10,7 +10,7 @@ English is the default language. You can switch it on the login screen, with `ha
 
 | Wiki feature | How Hark does it |
 |---|---|
-| LTS support | Debian 13 "trixie": supported until August 2030 (3 years regular + 2 years LTS). The 32-bit edition is on Debian 12, which has LTS until June 2028. Installed machines get **automatic security updates** (unattended-upgrades); live sessions don't. |
+| LTS support | Debian 13 "trixie" (the current stable release; Debian 14 is expected mid-2027). The 64-bit edition takes its kernel, firmware and microcode from **trixie-backports** for newer hardware; everything else stays on stable. Debian 13 is supported until August 2030 (3 years regular + 2 years LTS). The 32-bit edition is on Debian 12, which has LTS until June 2028. Installed machines get **automatic security updates** (unattended-upgrades); live sessions don't. |
 | LDAP integration | `sudo hark-ldap` asks for server, base DN and an optional bind DN, then sets up nslcd, NSS, PAM and auto-created home directories. It is **off by default**, so machines outside the space never wait for an LDAP server. `hark-ldap test` checks it and `sudo hark-ldap off` undoes it. |
 | ~~LXDE~~ → **LXQt** for older hardware | The wiki page is from 2023. LXDE is built on GTK2 and its developers moved to LXQt, its successor. LXQt has about the same footprint, is actively developed and is on track for Wayland. Openbox runs as window manager with animations off. |
 | Hark logo as menu button and wallpaper | The Hark logo from the wiki is the start button (bottom left) and the wallpaper. |
@@ -45,7 +45,7 @@ Hark's own tools: `hark-tools` (toolbox menu), `hark-welcome` (cheat sheet, show
 
 | | 64-bit ISO (`amd64`) | 32-bit ISO (`i386`) |
 |---|---|---|
-| Base | Debian 13 "trixie" | Debian 12 "bookworm" |
+| Base | Debian 13 "trixie" + backports kernel | Debian 12 "bookworm" |
 | CPU | any x86-64 (Core 2, Athlon 64 and newer) | Pentium 4/M, Atom, Celeron M (`686` kernel, no PAE needed) |
 | RAM | 1 GB works, 2 GB+ comfortable | 1 GB works |
 | Disk (installed) | 16 GB | 12 GB |

@@ -11,12 +11,14 @@ case "$HARK_ARCH" in
   amd64)
     DIST="trixie"
     FLAVOUR="amd64"
+    BACKPORTS="true"   # newer kernel + firmware for newer hardware (see config/archives)
     ;;
   i386)
     # Debian 13 has no i386 kernel/installer any more; bookworm does (LTS until 2028).
     # "686" = no PAE needed, also runs on Pentium M / early Atom / Celeron M.
     DIST="bookworm"
     FLAVOUR="686"
+    BACKPORTS="false"
     ;;
   *)
     echo "Unknown HARK_ARCH: $HARK_ARCH (choose amd64 or i386)" >&2
@@ -34,6 +36,7 @@ lb config noauto \
   --archive-areas "main contrib non-free non-free-firmware" \
   --security true \
   --updates true \
+  --backports "$BACKPORTS" \
   --apt-recommends false \
   --firmware-chroot true \
   --firmware-binary true \

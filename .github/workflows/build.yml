@@ -47,6 +47,7 @@ jobs:
           mkdir -p /tmp/logs
           tail -n 4000 ci-build.log > /tmp/logs/build.log 2>/dev/null || true
           sudo cat chroot/var/log/hark-extras.log > /tmp/logs/extras.log 2>/dev/null || true
+          sudo ls chroot/boot > /tmp/logs/kernel.txt 2>/dev/null || true
           echo "run ${{ github.run_id }} sha ${{ github.sha }} job ${{ job.status }}" > /tmp/logs/STATUS
           cd /tmp/logs && git init -q -b logs && git add -A
           git -c user.name=hark-ci -c user.email=ci@invalid commit -qm "logs ${{ matrix.arch }} run ${{ github.run_id }}"

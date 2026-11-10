@@ -1,0 +1,5 @@
+# Hark Linux: take the kernel, firmware and microcode from trixie-backports
+# (newer hardware support). Everything else stays on Debian stable.
+Package: linux-image-* linux-headers-* linux-kbuild-* linux-base firmware-* intel-microcode amd64-microcode
+Pin: release n=trixie-backports
+Pin-Priority: 990
